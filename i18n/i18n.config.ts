@@ -65,7 +65,12 @@ export default defineI18nConfig(() => ({
         connectTimeout: 'Connection timeout',
         hashCheckFail: 'File hash checksum failure!',
         serviceUnavailable: 'Service unavailable',
-        noSupportFolderDrag: 'Drag and drop of folders is not supported'
+        noSupportFolderDrag: 'Drag and drop of folders is not supported',
+        pleaseSelectDirToReceiveSync: 'Please select the directory to receive synchronization',
+        inCompStructure: 'In comparison structure',
+        pleaseSelectAdd: 'Please select the file you want to add',
+        pleaseSelectUpdate: 'Please select the file to update',
+        pleaseSelectDelete: 'Please select the file to delete'
       }
     },
     zh: {
@@ -130,7 +135,12 @@ export default defineI18nConfig(() => ({
         connectTimeout: '连接超时',
         hashCheckFail: '文件哈希校验失败',
         serviceUnavailable: '服务不可用',
-        noSupportFolderDrag: '暂不支持文件夹拖放'
+        noSupportFolderDrag: '暂不支持文件夹拖放',
+        pleaseSelectDirToReceiveSync: '请选择要接收同步的目录',
+        inCompStructure: '对比结构中',
+        pleaseSelectAdd: '请选择要新增的文件',
+        pleaseSelectUpdate: '请选择要更新的文件',
+        pleaseSelectDelete: '请选择要删除的文件'
       }
     }
   }

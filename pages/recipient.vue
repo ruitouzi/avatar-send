@@ -55,6 +55,9 @@ const syncDirStatus = ref<any>({
   fileMapAdd: {},
   fileMapUpdate: {},
   fileMapDelete: {},
+  addKeys: {},
+  updateKeys: {},
+  deleteKeys: {},
   waitAddList: [],
   waitUpdateList: [],
   waitDeleteList: []
@@ -362,9 +365,9 @@ function selectSyncDir() {
       }
       syncDirStatus.value.isDiffing = false
 
-      console.log(localFileMap)
-      console.log(peerFilesInfo.value)
-      console.log(syncDirStatus.value)
+      // console.log(localFileMap)
+      // console.log(peerFilesInfo.value)
+      // console.log(syncDirStatus.value)
     })
     .catch((e: any) => {
       console.warn(e)
@@ -392,16 +395,28 @@ async function doReceive() {
     })
   } else if (peerFilesInfo.value.type === 'syncDir') {
     // 目录同步
+    syncDirStatus.value.waitAddList = Object.keys(syncDirStatus.value.addKeys).filter(
+      (n) => !/\/$/.test(n)
+    )
+    syncDirStatus.value.waitUpdateList = Object.keys(syncDirStatus.value.updateKeys).filter(
+      (n) => !/\/$/.test(n)
+    )
+    syncDirStatus.value.waitDeleteList = Object.keys(syncDirStatus.value.deleteKeys).filter(
+      (n) => !/\/$/.test(n)
+    )
     if (
-      syncDirStatus.value.waitAddList.length === 0 ||
-      syncDirStatus.value.waitUpdateList.length === 0 ||
+      syncDirStatus.value.waitAddList.length === 0 &&
+      syncDirStatus.value.waitUpdateList.length === 0 &&
       syncDirStatus.value.waitDeleteList.length === 0
     ) {
       toast.add({ severity: 'warn', summary: 'Warn', detail: '请至少选择一个文件', life: 5e3 })
       status.value.isReceiving = false
       return
     }
-    // todo
+    totalFileSize.value = 0
+    ;[...syncDirStatus.value.waitAddList, ...syncDirStatus.value.waitUpdateList].forEach((name) => {
+      totalFileSize.value += peerFilesInfo.value.fileMap[name]?.size
+    })
   }
   status.value.isLock = true
 
@@ -454,6 +469,37 @@ async function doReceive() {
       }
     } else if (peerFilesInfo.value.type === 'syncDir') {
       console.log('do sync dir')
+      // 目录同步
+      // 1. 新增和更新文件：从对端拉取并写入本地
+      // console.log(syncDirStatus.value)
+      for (const key of [
+        ...syncDirStatus.value.waitAddList,
+        ...syncDirStatus.value.waitUpdateList
+      ]) {
+        // 路径分解
+        const paths = key.split('/')
+        let curFolder = syncTargetDH
+        for (let j = 0; j < paths.length - 1; j++) {
+          curFolder = await curFolder?.getDirectoryHandle(paths[j], { create: true })
+        }
+        const curFH = await curFolder?.getFileHandle(paths[paths.length - 1], { create: true })
+        curFileWriter = await curFH?.createWritable()
+        initCurFile(key)
+        await requestFile(key)
+      }
+      // 2. 删除本地多余文件
+      for (const key of syncDirStatus.value.waitDeleteList) {
+        const paths = key.split('/')
+        let curFolder = syncTargetDH
+        for (let j = 0; j < paths.length - 1; j++) {
+          curFolder = await curFolder?.getDirectoryHandle(paths[j])
+        }
+        try {
+          await curFolder?.removeEntry(paths[paths.length - 1])
+        } catch (e) {
+          console.warn('删除失败', key, e)
+        }
+      }
     }
 
     // 传输完成，告知对方
@@ -652,7 +698,9 @@ onUnmounted(() => {
                   {{ humanFileSize(curFile.size) }}
                 </p> -->
               </div>
-              <p class="text-xs my-2"><span class="text-red-500">*</span>请选择要接收同步的目录</p>
+              <p class="text-xs my-2">
+                <span class="text-red-500">*</span>{{ $t('hint.pleaseSelectDirToReceiveSync') }}
+              </p>
               <Button
                 outlined
                 rounded
@@ -668,27 +716,27 @@ onUnmounted(() => {
             <div v-else-if="syncDirStatus.isDiffing" class="flex flex-col items-center mt-12">
               <!-- <Icon name="material-symbols-light:unknown-document-outline-rounded" size="64" /> -->
               <div class="loader2"></div>
-              <p class="mt-8">对比结构中</p>
+              <p class="mt-8">{{ $t('hint.inCompStructure') }}</p>
             </div>
             <!-- 选择要新增、更新、删除的文件列表 -->
             <div v-else>
-              <p>请选择要新增的文件</p>
+              <p>{{ $t('hint.pleaseSelectAdd') }}</p>
               <FilesTree
                 :file-map="syncDirStatus.fileMapAdd"
                 :disabled="status.isLock"
-                v-model:selected-key="syncDirStatus.waitAddList"
+                v-model:selected-key="syncDirStatus.addKeys"
               />
-              <p class="mt-2">请选择要更新的文件</p>
+              <p class="mt-2">{{ $t('hint.pleaseSelectUpdate') }}</p>
               <FilesTree
                 :file-map="syncDirStatus.fileMapUpdate"
                 :disabled="status.isLock"
-                v-model:selected-key="syncDirStatus.waitUpdateList"
+                v-model:selected-key="syncDirStatus.updateKeys"
               />
-              <p class="mt-2">请选择要删除的文件</p>
+              <p class="mt-2">{{ $t('hint.pleaseSelectDelete') }}</p>
               <FilesTree
                 :file-map="syncDirStatus.fileMapDelete"
                 :disabled="status.isLock"
-                v-model:selected-key="syncDirStatus.waitDeleteList"
+                v-model:selected-key="syncDirStatus.deleteKeys"
               />
             </div>
           </div>

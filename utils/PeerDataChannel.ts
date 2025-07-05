@@ -243,9 +243,8 @@ export class PeerDataChannel {
   }
 }
 
-class EventQueue<T> {
-  private queue: T[] = []
-  private processing = false
+export class EventQueue<T> {
+  private tail: Promise<void> = Promise.resolve()
   private handler: (e: T) => Promise<void>
 
   constructor(handler: (e: T) => Promise<void>) {
@@ -253,22 +252,11 @@ class EventQueue<T> {
   }
 
   public enqueue(e: T): void {
-    this.queue.push(e)
-    if (!this.processing) {
-      void this.processNext()
-    }
-  }
-
-  private async processNext(): Promise<void> {
-    if (this.queue.length > 0) {
-      this.processing = true
-      const e = this.queue.shift()
-      if (e !== undefined) {
-        await this.handler(e)
-      }
-      void this.processNext()
-    } else {
-      this.processing = false
-    }
+    // 每次把新任务链到上一个任务后面
+    this.tail = this.tail
+      .then(() => this.handler(e))
+      .catch((error) => {
+        console.error('Error processing event:', error)
+      })
   }
 }
