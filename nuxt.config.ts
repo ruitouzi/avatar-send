@@ -2,8 +2,6 @@
 import path from 'path'
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  css: ['@/assets/main.css'],
-
   modules: [
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
@@ -13,13 +11,13 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
     '@primevue/nuxt-module'
   ],
-
+  css: ['@/assets/main.css', '@/assets/css/tailwind.css'],
   app: {
     head: {
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0',
-      link: [{ rel: 'icon', href: '/favicon.webp' }]
-    }
+      link: [{ rel: 'icon', href: '/favicon.webp' }],
+    },
   },
 
   i18n: {

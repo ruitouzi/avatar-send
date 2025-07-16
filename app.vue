@@ -31,7 +31,8 @@ onMounted(() => {
   <NuxtRouteAnnouncer />
   <FullScreenLoader />
   <Toast position="top-right" />
-  <NavBar />
+  <!-- <NavBar /> -->
+  <AppHeader />
   <NuxtPage />
   <AppFooter />
   <ScrollTop />

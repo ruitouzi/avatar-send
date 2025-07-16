@@ -192,49 +192,98 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen overflow-hidden bg-slate-900">
-    <!-- Site header -->
-    
-    <!-- Page content -->
-    <main class="grow">
-      <section class="relative">
+  <div class="md:px-[10vw] pb-4">
+    <div
+      class="fixed top-0 left-0 right-0 bottom-0 inset-0 -z-50 h-full w-full bg-white dark:bg-zinc-950 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#25272b_1px,transparent_1px)] [background-size:16px_16px]"
+    ></div>
+    <div class="py-6 px-8 text-center">
+      <h1 class="md:text-6xl text-5xl tracking-wider font-serif">Fast Send</h1>
+      <p
+        class="mt-4 leading-6 tracking-widest text-sm md:text-base text-gray-600 dark:text-gray-200"
+      >
+        {{ t('description') }}
+      </p>
+    </div>
 
-        <!-- Illustration -->
-        <div class="hidden md:block absolute left-1/2 -translate-x-1/2 pointer-events-none -z-10" aria-hidden="true">
-          <img src="@/assets/images/hero-illustration.svg" class="max-w-none" width="1440" height="1265" alt="Hero Illustration">
-        </div>
-         <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
-      <div class="pt-32 md:pt-40">
+    <p
+      class="text-xs md:text-sm text-neutral-600 dark:text-neutral-400 p-4"
+      v-show="!isModernFileAPISupport"
+    >
+      <span class="text-red-500">*</span>{{ $t('hint.noModernFileAPIWarn') }}
+    </p>
 
-        <!-- Hero content -->
-        <div class="max-w-3xl mx-auto text-center">
-
-          <h1 class="h1 font-hkgrotesk mb-6" data-aos="fade-up">A powerful suite of user-centric products</h1>
-          <p class="text-xl text-slate-500 mb-10" data-aos="fade-up" data-aos-delay="100">Our landing page template works on all devices, so you only have to set it up once, and get beautiful results forever.</p>
-          <div class="max-w-xs mx-auto sm:max-w-none sm:inline-flex sm:justify-center space-y-4 sm:space-y-0 sm:space-x-4" data-aos="fade-up" data-aos-delay="200">
-            <div>
-              <router-link class="btn text-white bg-indigo-500 hover:bg-indigo-600 w-full shadow-xs group" to="/signup">
-                Get Started Free <span class="tracking-normal text-sky-300 group-hover:translate-x-0.5 transition-transform duration-150 ease-in-out ml-1">-&gt;</span>
-              </router-link>
-            </div>
-            <div>
-              <a class="btn text-slate-300 bg-slate-700 hover:bg-slate-600 border-slate-600 w-full shadow-xs" href="#0">Read Docs</a>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Hero image -->
-        <div class="pt-16 md:pt-20" data-aos="fade-up" data-aos-delay="300">
-          <img class="mx-auto" src="@/assets/images/hero-image.png" width="920" height="518" alt="Hero">
+    <div class="md:grid md:grid-cols-2 gap-4 my-6 px-4">
+      <div class="flex flex-col items-center relative px-4 py-8">
+        <!-- 拖放指示 -->
+        <div
+          ref="fileDragArea"
+          @dragover="fileDragOver"
+          @drop="fileDrop"
+          class="file-drag-area absolute left-0 top-0 right-0 bottom-0 flex-col items-center justify-center rounded-lg bg-white/60 dark:bg-black/60 backdrop-blur-sm border border-dashed border-neutral-500 z-40"
+        >
+          <Icon name="solar:file-send-linear" size="48" />
+          <p class="mt-4">{{ $t('label.dragHereToSendFile') }}</p>
         </div>
 
+        <h2 class="text-2xl tracking-wider flex flex-row items-center gap-2">
+          <Icon name="solar:card-send-linear" />{{ $t('label.quickStart') }}
+        </h2>
+
+        <Button
+          outlined
+          rounded
+          class="block w-full tracking-wider mt-6"
+          severity="contrast"
+          @click="sendFile"
+          ><Icon name="solar:file-line-duotone" class="mr-2" />{{ $t('btn.sendFile') }}</Button
+        >
+        <Button
+          outlined
+          rounded
+          class="block w-full tracking-wider mt-6"
+          severity="contrast"
+          :disabled="!isDirSupport"
+          @click="sendDir"
+          ><Icon name="solar:folder-with-files-line-duotone" class="mr-2" />{{
+            $t('btn.sendDir')
+          }}</Button
+        >
+        <Button
+          rounded
+          class="block w-full tracking-wider mt-6"
+          severity="contrast"
+          :disabled="!isModernFileAPISupport"
+          @click="syncDir"
+          ><Icon name="solar:refresh-square-broken" class="mr-2" />{{ $t('btn.syncDir') }}</Button
+        >
+      </div>
+
+      <div
+        class="flex flex-col items-center space-y-6 md:space-y-12 mt-8 md:mt-0 px-4 md:py-8 py-0"
+      >
+        <h2 class="text-2xl tracking-wider flex flex-row items-center gap-2">
+          <Icon name="solar:card-recive-linear" />{{ $t('label.receiveCode') }}
+        </h2>
+
+        <InputOtp integerOnly v-model:model-value="receiveCode" class="gap-4">
+          <template #default="{ attrs, events, index }">
+            <input
+              :autofocus="index === 1"
+              type="number"
+              v-bind="attrs"
+              v-on="events"
+              class="border border-neutral-500/70 rounded bg-neutral-50 dark:bg-zinc-900 focus:outline-none size-14 text-2xl text-center no-arrows"
+            />
+          </template>
+        </InputOtp>
       </div>
     </div>
-      </section>
-    </main>
-    
-    <!-- Site footer -->
+
+    <div class="flex flex-row items-baseline justify-center pt-8 text-sm">
+      <span>{{ $t('label.transmitted') }}</span>
+      <span class="text-2xl m-2 tracking-wider">{{ transCount }}</span>
+      <span>{{ $t('label.times') }}</span>
+    </div>
   </div>
 </template>
 
